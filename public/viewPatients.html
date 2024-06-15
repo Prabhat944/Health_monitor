@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>View Patients</title>
 </head>
 <body>
@@ -25,11 +26,184 @@
     </tbody>
   </table>
   <button onclick="window.location.href='/'">Moniter All Patient data </button>
+  <h2>Daily Health Stats</h2>
+  <form id="searchForm">
+    <label for="patientId">Patient ID:</label>
+    <input type="text" id="patientId" name="patientId" required>
+    <button type="submit">View Patient Health Data</button>
+  </form>
+  <h2>Average Heart Rate</h2>
+  <canvas id="avgHeartRateChart"></canvas>
+  <h2>Average Blood Pressure</h2>
+  <canvas id="avgBloodPressureChart"></canvas>
+  <h2>Average temperature</h2>
+  <canvas id="avgTemperatureChart"></canvas>
+  <h2>Daily stats Chart</h2>
+  <canvas id="dailyStatsChart"></canvas>
   <script>
     // Check if token exists in localStorage
     if (!localStorage.getItem('token')) {
       window.location.href = '/login';
     }
+    document.getElementById('searchForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const patientId = document.getElementById('patientId').value;
+      renderCharts(patientId.toString());
+    });
+    async function fetchWithToken(url) {
+      const response = await fetch(url, {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+
+      if (response.redirected) {
+        window.location.href = response.url;
+        return;
+      }
+
+      return response;
+    }
+
+    async function fetchAverageHeartRate(id) {
+      const response = await fetchWithToken(`/api/analytics/average-heart-rate/${id}`);
+      const data = await response.json();
+      return data[0].averageHeartRate;
+    }
+
+    async function fetchAverageBloodPressure(id) {
+      const response = await fetchWithToken(`/api/analytics/average-blood-pressure/${id}`);
+      const data = await response.json();
+      return data[0].averageBloodPressure;
+    }
+
+    async function fetchAverageTemperature(id) {
+      const response = await fetchWithToken(`/api/analytics/average-temperature/${id}`);
+      const data = await response.json();
+      return data[0].averageTemperature;
+    }
+
+    async function fetchDailyHealthStats(id) {
+      const response = await fetchWithToken(`/api/analytics/daily-stats/${id}`);
+      return await response.json();
+    }
+
+    async function renderCharts(id) {
+      const avgHeartRate = await fetchAverageHeartRate(id);
+      const avgBloodPressure = await fetchAverageBloodPressure(id);
+      const avgTemperature = await fetchAverageTemperature(id);
+      const dailyStats = await fetchDailyHealthStats(id);
+
+      // Average Heart Rate Chart
+      new Chart(document.getElementById('avgHeartRateChart'), {
+            type: 'bar',
+            data: {
+            labels: ['Average Heart Rate'],
+            datasets: [{
+                label: 'BPM',
+                data: [avgHeartRate],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+            },
+            options: {
+            scales: {
+                y: {
+                beginAtZero: true
+                }
+            }
+            }
+        });
+
+    // Average Blood Pressure Chart
+    new Chart(document.getElementById('avgBloodPressureChart'), {
+            type: 'bar',
+            data: {
+            labels: ['Average Blood Pressure'],
+            datasets: [{
+                label: 'mmHg',
+                data: [avgBloodPressure],
+                backgroundColor: 'rgba(73, 0, 255, 0.2',
+                borderColor: 'rgba(73, 0, 255, 1)',
+                borderWidth: 1
+            }]
+            },
+            options: {
+            scales: {
+                y: {
+                beginAtZero: true
+                }
+            }
+            }
+        });
+
+     // Average Heart Rate Chart
+     new Chart(document.getElementById('avgTemperatureChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Average Temperature'],
+          datasets: [{
+            label: '°C',
+            data: [avgTemperature],
+            backgroundColor: 'rgba(240, 255, 0, 0.2)',
+            borderColor: 'rgba(240, 255, 0, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // Daily Health Stats Chart
+      const dates = dailyStats.map(stat => stat._id);
+      const avgHeartRates = dailyStats.map(stat => stat.averageHeartRate);
+      const avgBloodPressures = dailyStats.map(stat => stat.averageBloodPressure);
+      const avgTemperatures = dailyStats.map(stat => stat.averageTemperature);
+
+      new Chart(document.getElementById('dailyStatsChart'), {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Average Heart Rate',
+            data: avgHeartRates,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            fill: false
+          }, {
+            label: 'Average Temperature',
+            data: avgTemperatures,
+            backgroundColor: 'rgba(240, 255, 0, 0.2)',
+            borderColor: 'rgba(240, 255, 0, 1)',
+            borderWidth: 1,
+            fill: false
+          }, {
+            label: 'Average Blood Pressure',
+            data: avgBloodPressures,
+            backgroundColor: 'rgba(73, 0, 255, 0.2)',
+            borderColor: 'rgba(73, 0, 255, 1)',
+            borderWidth: 1,
+            fill: false
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // document.addEventListener('DOMContentLoaded', renderCharts);
 
     async function fetchPatients(query = '') {
       const response = await fetch(`/api/health/patients?name=${query}`, {

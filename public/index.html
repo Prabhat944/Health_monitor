@@ -11,11 +11,16 @@
   <p>Welcome to the Health Monitor System</p>
   <button onclick="window.location.href='/addPatient'">Add New Patient Data</button>
   <button onClick="window.location.href='viewPatients'">View Patients</button>
+  <button onclick="window.location.href='/viewPatient.html?patientId=PASTE_PATIENT_ID_HERE'">View Patient Health Data</button>
+
   <h2>Average Heart Rate</h2>
   <canvas id="avgHeartRateChart"></canvas>
   
   <h2>Average Blood Pressure</h2>
   <canvas id="avgBloodPressureChart"></canvas>
+  
+  <h2>Average Temperature Chart</h2>
+  <canvas id="avgTemperatureChart"></canvas>
   
   <h2>Daily Health Stats</h2>
   <canvas id="dailyStatsChart"></canvas>
@@ -52,6 +57,12 @@
       return data[0].averageBloodPressure;
     }
 
+    async function fetchAverageTemperature() {
+      const response = await fetchWithToken('/api/analytics/average-temperature');
+      const data = await response.json();
+      return data[0].averageTemperature;
+    }
+
     async function fetchDailyHealthStats() {
       const response = await fetch('/api/analytics/daily-stats', {
         headers: {
@@ -64,6 +75,7 @@
     async function renderCharts() {
       const avgHeartRate = await fetchAverageHeartRate();
       const avgBloodPressure = await fetchAverageBloodPressure();
+      const avgTemperature = await fetchAverageTemperature();
       const dailyStats = await fetchDailyHealthStats();
       
       // Average Heart Rate Chart
@@ -97,7 +109,29 @@
             label: 'mmHg',
             data: [avgBloodPressure],
             backgroundColor: 'rgba(73, 0, 255, 0.2)',
-            borderColor: 'rgba(73, 0, 255, 1c)',
+            borderColor: 'rgba(73, 0, 255, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+       // Average Heart Rate Chart
+       new Chart(document.getElementById('avgTemperatureChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Average Temperature'],
+          datasets: [{
+            label: '°C',
+            data: [avgTemperature],
+            backgroundColor: 'rgba(240, 255, 0, 0.2)',
+            borderColor: 'rgba(240, 255, 0, 1)',
             borderWidth: 1
           }]
         },
@@ -130,8 +164,8 @@
           }, {
             label: 'Average Temperature',
             data: avgTemperatures,
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(240, 255, 0, 0.2)',
+            borderColor: 'rgba(240, 255, 0, 1)',
             borderWidth: 1,
             fill: false
           }, {
