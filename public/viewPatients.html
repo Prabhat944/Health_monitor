@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Patients</title>
+</head>
+<body>
+  <h1>View Patients</h1>
+  <input type="text" id="search" placeholder="Search by name">
+  <button onclick="searchPatients()">Search</button>
+  <table id="patientsTable">
+    <thead>
+      <tr>
+        <th>Patient Id</th>
+        <th>Name</th>
+        <th>Heart Rate (BPM)</th>
+        <th>bloodPressure (mmHg)</th>
+        <th>Temperature (°C)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Patient data will be here -->
+    </tbody>
+  </table>
+  <button onclick="window.location.href='/'">Moniter All Patient data </button>
+  <script>
+    // Check if token exists in localStorage
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/login';
+    }
+
+    async function fetchPatients(query = '') {
+      const response = await fetch(`/api/health/patients?name=${query}`, {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      const patients = await response.json();
+      return patients;
+    }
+
+    async function renderPatients(patients) {
+      const tbody = document.getElementById('patientsTable').getElementsByTagName('tbody')[0];
+      tbody.innerHTML = '';
+      patients.forEach(patient => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${patient.patientId}</td>
+          <td>${patient.name || "anonymous"}</td>
+          <td><input type="number" value="${patient.heartRate}" onchange="updatePatient('${patient._id}', 'heartRate', this.value)"></td>
+          <td><input type="number" value="${patient.bloodPressure}" onchange="updatePatient('${patient._id}', 'bloodPressure', this.value)"></td>
+          <td><input type="number" value="${patient.temperature}" onchange="updatePatient('${patient._id}', 'temperature', this.value)"></td>
+          <td><button onclick="deletePatient('${patient._id}')">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function searchPatients() {
+      const query = document.getElementById('search').value;
+      const patients = await fetchPatients(query);
+      renderPatients(patients);
+    }
+
+    async function updatePatient(id, field, value) {
+      const response = await fetch(`/api/health/patients/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': localStorage.getItem('token')
+        },
+        body: JSON.stringify({ [field]: value }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert('Patient data updated successfully!');
+      } else {
+        alert('Failed to update patient data: ' + data.msg);
+      }
+    }
+
+    async function deletePatient(id) {
+      const response = await fetch(`/api/health/patients/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert('Patient deleted successfully!');
+        searchPatients(); // Refresh the list
+      } else {
+        alert('Failed to delete patient: ' + data.msg);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const patients = await fetchPatients();
+      renderPatients(patients);
+    });
+  </script>
+</body>
+</html>

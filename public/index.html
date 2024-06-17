@@ -4,9 +4,156 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Health Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <h1>Health Monitor</h1>
   <p>Welcome to the Health Monitor System</p>
+  <button onclick="window.location.href='/addPatient'">Add New Patient Data</button>
+  <button onClick="window.location.href='viewPatients'">View Patients</button>
+  <h2>Average Heart Rate</h2>
+  <canvas id="avgHeartRateChart"></canvas>
+  
+  <h2>Average Blood Pressure</h2>
+  <canvas id="avgBloodPressureChart"></canvas>
+  
+  <h2>Daily Health Stats</h2>
+  <canvas id="dailyStatsChart"></canvas>
+
+  <script>
+     // Check if token exists in localStorage
+     if (!localStorage.getItem('token')) {
+      window.location.href = '/login';
+    }
+    async function fetchWithToken(url) {
+      const response = await fetch(url, {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+
+      if (response.redirected) {
+        window.location.href = response.url;
+        return;
+      }
+
+      return response;
+    }
+
+    async function fetchAverageHeartRate() {
+      const response = await fetchWithToken('/api/analytics/average-heart-rate');
+      const data = await response.json();
+      return data[0].averageHeartRate;
+    }
+
+    async function fetchAverageBloodPressure() {
+      const response = await fetchWithToken('/api/analytics/average-blood-pressure');
+      const data = await response.json();
+      return data[0].averageBloodPressure;
+    }
+
+    async function fetchDailyHealthStats() {
+      const response = await fetch('/api/analytics/daily-stats', {
+        headers: {
+          'x-auth-token': localStorage.getItem('token') 
+        }
+      });
+      return await response.json();
+    }
+
+    async function renderCharts() {
+      const avgHeartRate = await fetchAverageHeartRate();
+      const avgBloodPressure = await fetchAverageBloodPressure();
+      const dailyStats = await fetchDailyHealthStats();
+      
+      // Average Heart Rate Chart
+      new Chart(document.getElementById('avgHeartRateChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Average Heart Rate'],
+          datasets: [{
+            label: 'BPM',
+            data: [avgHeartRate],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // Average Heart Rate Chart
+      new Chart(document.getElementById('avgBloodPressureChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Average Blood Pressure'],
+          datasets: [{
+            label: 'mmHg',
+            data: [avgBloodPressure],
+            backgroundColor: 'rgba(73, 0, 255, 0.2)',
+            borderColor: 'rgba(73, 0, 255, 1c)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      
+      // Daily Health Stats Chart
+      const dates = dailyStats.map(stat => stat._id);
+      const avgHeartRates = dailyStats.map(stat => stat.averageHeartRate);
+      const avgBloodPressures = dailyStats.map(stat => stat.averageBloodPressure);
+      const avgTemperatures = dailyStats.map(stat => stat.averageTemperature);
+      
+      new Chart(document.getElementById('dailyStatsChart'), {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Average Heart Rate',
+            data: avgHeartRates,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            fill: false
+          }, {
+            label: 'Average Temperature',
+            data: avgTemperatures,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1,
+            fill: false
+          }, {
+            label: 'Average Blood Pressure',
+            data: avgBloodPressures,
+            backgroundColor: 'rgba(73, 0, 255, 0.2)',
+            borderColor: 'rgba(73, 0, 255, 1)',
+            borderWidth: 1,
+            fill: false
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', renderCharts);
+  </script>
 </body>
 </html>

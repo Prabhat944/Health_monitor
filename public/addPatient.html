@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Patient</title>
+</head>
+<body>
+  <h1>Add Patient</h1>
+  <form id="addPatientForm">
+    <label for="patientId">Patient ID:</label>
+    <input type="text" id="patientId" name="patientId" required>
+    <br>
+    <label for="name">Patient Name:</label>
+    <input type="text" id="name" name="name" required>
+    <br>
+    <label for="heartRate">Heart Rate:</label>
+    <input type="number" id="heartRate" name="heartRate" required>
+    <br>
+    <label for="bloodPressure">Blood Pressure:</label>
+    <input type="text" id="bloodPressure" name="bloodPressure" required>
+    <br>
+    <label for="temperature">Temperature:</label>
+    <input type="number" id="temperature" name="temperature" required>
+    <br>
+    <button type="submit">Add Patient</button>
+  </form>
+  <button onclick="window.location.href='/'">Moniter All Patient data </button>
+
+  <script>
+     // Check if token exists in localStorage
+     if (!localStorage.getItem('token')) {
+      window.location.href = '/login';
+    }
+    document.getElementById('addPatientForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const patientId = document.getElementById('patientId').value;
+      const name = document.getElementById('name').value;
+      const heartRate = document.getElementById('heartRate').value;
+      const bloodPressure = document.getElementById('bloodPressure').value;
+      const temperature = document.getElementById('temperature').value;
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/health', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ patientId, name, heartRate, bloodPressure, temperature }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('Patient data added successfully!');
+      } else {
+        alert('Failed to add patient data: ' + data.msg);
+      }
+    });
+  </script>
+</body>
+</html>

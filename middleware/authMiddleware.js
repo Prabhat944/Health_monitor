@@ -12,6 +12,9 @@ module.exports = function(req,res,next){
         req.user = decoded;
         next();
     }catch(err){
+        if (err.name === 'TokenExpiredError') {
+            return res.redirect('/login');
+          }
         console.error(err.message);
         res.status(500).json({msg:"Server error => Something went wrong"})
     }

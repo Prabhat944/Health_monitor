@@ -5,6 +5,10 @@ const healthDataSchema = new mongoose.Schema({
         type:String,
         required:true
     },
+    name: {
+        type:String,
+        default:"anonymous"
+    },
     timeStamp:{
         type:Date,
         default:Date.now,
@@ -14,7 +18,7 @@ const healthDataSchema = new mongoose.Schema({
         required:true,
     },
     bloodPressure:{
-        type:String,
+        type:Number,
         required:true
     },
     temperature:{
