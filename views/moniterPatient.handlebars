@@ -1,35 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Monitor</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Moniter</title>
 </head>
-<body>
-  <h1>Health Monitor</h1>
-  <p>Welcome to the Health Monitor System</p>
-  <button onclick="window.location.href='/addPatient'">Add New Patient Data</button>
-  <button onClick="window.location.href='viewPatients'">View Patients</button>
-  <button onclick="window.location.href='/viewPatient.html?patientId=PASTE_PATIENT_ID_HERE'">View Patient Health Data</button>
 
-  <h2>Average Heart Rate</h2>
-  <canvas id="avgHeartRateChart"></canvas>
-  
-  <h2>Average Blood Pressure</h2>
-  <canvas id="avgBloodPressureChart"></canvas>
-  
-  <h2>Average Temperature Chart</h2>
-  <canvas id="avgTemperatureChart"></canvas>
-  
-  <h2>Daily Health Stats</h2>
-  <canvas id="dailyStatsChart"></canvas>
-
+<body style="font-family: sans-serif;">
+  <form id="searchForm" style="display:flex;gap:10px;align-items:center;">
+    <label for="patientId">Patient ID:</label>
+    <input type="text" id="patientId" name="patientId" required style="width: 100%;
+    width: 350px;
+    height: 28px;
+    border-radius: 4px;">
+    <button type="submit" style="width: 100%;
+  height: 35px;
+  background-color:  rgb(255, 0, 106);
+  color: white;
+  font-weight: 600;
+  font-size: larger;
+  border-radius: 4px;
+  width:350px;
+  border-color:  rgb(255, 0, 106);
+  cursor: pointer;">View Patient Health Data</button>
+  </form>
+  <section style="display: flex;flex-direction: column;justify-content: center;align-items: center;">
+    <h2>Average Overall Graph</h2>
+    <div style='display: grid;
+       width: 100%;
+       grid-template-areas:
+      "graph1 graph2"
+      "graph3 graph4";
+      grid-template-columns: 50%;row-gap: 26px;'>
+      <div style="grid-area: graph1;padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 44vw;
+  box-shadow: 0px 2px 5px rgb(0,0,0,0.5);
+  border-radius: 5px;">
+        <h2>Average Heart Rate</h2>
+        <canvas id="avgHeartRateChart"></canvas>
+      </div>
+      <div style="grid-area: graph2;padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 44vw;
+  box-shadow: 0px 2px 5px rgb(0,0,0,0.5);
+  border-radius: 5px;">
+        <h2>Average Blood Pressure</h2>
+        <canvas id="avgBloodPressureChart"></canvas>
+      </div>
+      <div style="grid-area: graph3;padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 44vw;
+  box-shadow: 0px 2px 5px rgb(0,0,0,0.5);
+  border-radius: 5px;">
+        <h2>Average temperature</h2>
+        <canvas id="avgTemperatureChart"></canvas>
+      </div>
+      <div style="grid-area: graph4;padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 44vw;
+  box-shadow: 0px 2px 5px rgb(0,0,0,0.5);
+  border-radius: 5px;">
+        <h2>Daily stats Chart</h2>
+        <canvas id="dailyStatsChart"></canvas>
+      </div>
+    </div>
+  </section>
   <script>
-     // Check if token exists in localStorage
-     if (!localStorage.getItem('token')) {
+
+    if (!localStorage.getItem('token')) {
       window.location.href = '/login';
     }
+
+    document.getElementById('searchForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      const patientId = document.getElementById('patientId').value;
+      renderCharts(patientId.toString());
+    });
     async function fetchWithToken(url) {
       const response = await fetch(url, {
         headers: {
@@ -45,39 +103,35 @@
       return response;
     }
 
-    async function fetchAverageHeartRate() {
-      const response = await fetchWithToken('/api/analytics/average-heart-rate');
+    async function fetchAverageHeartRate(id) {
+      const response = await fetchWithToken(`/api/analytics/average-heart-rate/${id}`);
       const data = await response.json();
       return data[0].averageHeartRate;
     }
 
-    async function fetchAverageBloodPressure() {
-      const response = await fetchWithToken('/api/analytics/average-blood-pressure');
+    async function fetchAverageBloodPressure(id) {
+      const response = await fetchWithToken(`/api/analytics/average-blood-pressure/${id}`);
       const data = await response.json();
       return data[0].averageBloodPressure;
     }
 
-    async function fetchAverageTemperature() {
-      const response = await fetchWithToken('/api/analytics/average-temperature');
+    async function fetchAverageTemperature(id) {
+      const response = await fetchWithToken(`/api/analytics/average-temperature/${id}`);
       const data = await response.json();
       return data[0].averageTemperature;
     }
 
-    async function fetchDailyHealthStats() {
-      const response = await fetch('/api/analytics/daily-stats', {
-        headers: {
-          'x-auth-token': localStorage.getItem('token') 
-        }
-      });
+    async function fetchDailyHealthStats(id) {
+      const response = await fetchWithToken(`/api/analytics/daily-stats/${id}`);
       return await response.json();
     }
 
-    async function renderCharts() {
-      const avgHeartRate = await fetchAverageHeartRate();
-      const avgBloodPressure = await fetchAverageBloodPressure();
-      const avgTemperature = await fetchAverageTemperature();
-      const dailyStats = await fetchDailyHealthStats();
-      
+    async function renderCharts(id) {
+      const avgHeartRate = await fetchAverageHeartRate(id);
+      const avgBloodPressure = await fetchAverageBloodPressure(id);
+      const avgTemperature = await fetchAverageTemperature(id);
+      const dailyStats = await fetchDailyHealthStats(id);
+
       // Average Heart Rate Chart
       new Chart(document.getElementById('avgHeartRateChart'), {
         type: 'bar',
@@ -100,7 +154,7 @@
         }
       });
 
-      // Average Heart Rate Chart
+      // Average Blood Pressure Chart
       new Chart(document.getElementById('avgBloodPressureChart'), {
         type: 'bar',
         data: {
@@ -108,7 +162,7 @@
           datasets: [{
             label: 'mmHg',
             data: [avgBloodPressure],
-            backgroundColor: 'rgba(73, 0, 255, 0.2)',
+            backgroundColor: 'rgba(73, 0, 255, 0.2',
             borderColor: 'rgba(73, 0, 255, 1)',
             borderWidth: 1
           }]
@@ -122,8 +176,8 @@
         }
       });
 
-       // Average Heart Rate Chart
-       new Chart(document.getElementById('avgTemperatureChart'), {
+      // Average Heart Rate Chart
+      new Chart(document.getElementById('avgTemperatureChart'), {
         type: 'bar',
         data: {
           labels: ['Average Temperature'],
@@ -143,13 +197,13 @@
           }
         }
       });
-      
+
       // Daily Health Stats Chart
       const dates = dailyStats.map(stat => stat._id);
       const avgHeartRates = dailyStats.map(stat => stat.averageHeartRate);
       const avgBloodPressures = dailyStats.map(stat => stat.averageBloodPressure);
       const avgTemperatures = dailyStats.map(stat => stat.averageTemperature);
-      
+
       new Chart(document.getElementById('dailyStatsChart'), {
         type: 'line',
         data: {
@@ -186,8 +240,11 @@
         }
       });
     }
-
-    document.addEventListener('DOMContentLoaded', renderCharts);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const patientId = "{{ id }}";
+      renderCharts(patientId);
+    });
   </script>
 </body>
+
 </html>
